@@ -1,0 +1,278 @@
+(require 'org-tempo)
+
+(add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+(add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+
+(setq user-full-name  "Almos-Agoston Zediu"
+      user-mail-address "zold.almos@gmail.com")
+
+(map! "C-i" 'evil-jump-forward)
+(setq-default tab-width 4)
+
+(setq package-native-compile t)
+
+(use-package counsel
+  :custom
+  (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only))
+
+(require 'bind-key)
+(bind-key* "s-l" 'windmove-right)
+
+(global-hl-line-mode)
+
+(defun alm/reload-emacs-config ()
+"It relods my config."
+(interactive)
+  (load "~/.doom.d/config.el"))
+
+(map! :leader "h r c" 'alm/reload-emacs-config)
+
+(defun alm/visual-fill()
+  (setq visual-fill-column-width 100
+        visual-fill-column-center-text t
+        display-line-numbers nil)
+  (visual-fill-column-mode 1))
+
+
+(add-hook 'org-mode-hook #'alm/visual-fill)
+(add-hook 'dired-mode-hook #'alm/visual-fill)
+
+(defun alm/scale-text ()
+  (text-scale-increase 1))
+
+(add-hook 'org-mode-hook #'alm/scale-text)
+(add-hook 'dired-mode-hook #'alm/scale-text)
+
+(load-theme 'doom-challenger-deep t)
+(set-frame-parameter (selected-frame) 'alpha '(89 . 89))
+(add-to-list 'default-frame-alist '(alpha . (89 . 89)))
+(defun load-dark-mode ()
+  "It loads my dark configuration."
+        (interactive)
+        (load-theme 'doom-challenger-deep t)
+        (set-frame-parameter (selected-frame) 'alpha '(89 . 75))
+        (add-to-list 'default-frame-alist '(alpha . (89 . 75))))
+
+(defun load-light-mode ()
+  "It loads my light configuration."
+        (interactive)
+        (load-theme 'doom-gruvbox-light t)
+        (set-frame-parameter (selected-frame) 'alpha '(89 . 75))
+        (add-to-list 'default-frame-alist '(alpha . (89 . 75))))
+
+(map! :leader "t m d" 'load-dark-mode)
+(map! :leader "t m l" 'load-light-mode)
+
+(defun terminal ()
+  "Initialize or toggle terminal emulator
+ If the terminal window is visible hide it.
+ If a terminal buffer exists, but is not visible, show it.
+ If no terminal buffer exists for the current frame create and show it."
+  (interactive)
+  (multi-vterm-dedicated-toggle)
+  (evil-window-decrease-height 18))
+(map! :leader "l" #'terminal)
+
+(map! "s-<return>" 'multi-vterm )
+
+
+
+(use-package! python-black
+  :after python)
+(add-hook 'python-mode-hook 'python-black-on-save-mode)
+(add-hook 'python-mode-hook #'lsp) ; or lsp-deferred
+(setq gc-cons-threshold 100000000)
+(setq read-process-output-max (* 1024 1024)) ;; 1mb
+
+(add-hook 'js2-mode-hook 'lsp)
+
+(require 'treemacs)
+(map! :leader "x" 'treemacs)
+
+(require 'web-mode)
+(add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.[agj]sp\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.djhtml\\'" . web-mode))
+(setq web-mode-engines-alist
+      '(("php"    . "\\.phtml\\'")
+        ("blade"  . "\\.blade\\.")
+        ("django"   . "\\.html\\."))
+)
+(setq web-mode-enable-engine-detection t)
+
+(require 'org-superstar)
+(add-hook 'org-mode-hook (lambda () (org-superstar-mode 1)))
+(setq org-directory "~/org/")
+(setq org-hide-block-startup t)
+(with-eval-after-load 'ox
+  (require 'ox-hugo))
+(setq org-priority-faces '((65: foreground-color "#660000")
+                           (66: foreground-color "#99FFFF")
+                           (67: foreground-color "#009150")))
+(use-package! org-fancy-priorities
+  :ensure t
+  :hook (org-mode . org-fancy-priorities-mode)
+  :config
+  (setq org-fancy-priorities-list '("⚡" "⬆" "⬇" "☕"))
+  )
+
+;; This determines the style of line numbers in effect. If set to `nil', line
+;; numbers are disabled. For relative line numbers, set this to `relative'.
+(setq display-line-numbers-type t)
+
+(defun alm/org-babel-tangle-config ()
+  (when (string-equal (file-name-directory (buffer-file-name))
+                      (expand-file-name "~/.doom.d/"))
+    ;; Dynamic scoping to the rescue
+    (let ((org-confirm-babel-evaluate nil))
+      (org-babel-tangle))))
+
+(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook  #'alm/org-babel-tangle-config)))
+
+(use-package yasnippet
+  :config
+  (add-to-list 'yas-snippet-dirs "~/.doom.d/snippets/emacs-lisp-mode")
+  (add-to-list 'yas-snippet-dirs "~/.doom.d/snippets/emacs-lisp-mode/cmake-mode")
+  (yas-global-mode 1))
+
+(defun create-cmake-root(cmake-project-dir-string)
+  (let* ((cmake-file-string (concat cmake-project-dir-string "/CMakeLists.txt"))
+         (main-cpp-string (concat cmake-project-dir-string "/main.cpp"))
+         (build-folder-string (concat cmake-project-dir-string "/build"))
+         (debug-folder-string (concat build-folder-string "/Debug"))
+         (release-folder-string (concat build-folder-string "/Release")))
+        (dired-create-directory build-folder-string)
+        (dired-create-directory debug-folder-string)
+        (dired-create-directory release-folder-string)
+        (with-temp-buffer
+        (cmake-mode)
+        (yas-minor-mode)
+        (yas-expand-snippet (yas-lookup-snippet "cmake_project" 'cmake-mode))
+        (when (file-writable-p cmake-file-string)
+        (write-region (point-min)
+                        (point-max)
+                        cmake-file-string))
+        (delete-region (point-min)
+                       (point-max))
+        (cpp-mode)
+        (yas-minor-mode)
+        (yas-expand-snippet (yas-lookup-snippet "main_cpp" 'cpp-mode))
+        (when (file-writable-p main-cpp-string)
+        (write-region (point-min)
+                        (point-max)
+                        main-cpp-string)))
+    ))
+
+(defun create-cmake-project (project-root string)
+  "Creates a new C++ CMake project"
+  (interactive (list (read-directory-name "Select project root: ")
+                     (read-string "Name of the project: ")))
+  (setq cmake-project-name string)
+  (let* ((cmake-project-dir-string (concat project-root string)))
+                                  (dired-create-directory cmake-project-dir-string)
+                                  (create-cmake-root cmake-project-dir-string)
+                                  (projectile-add-known-project cmake-project-dir-string)))
+
+(defun build-cmake-project(mode)
+  "Builds a CMake project."
+  (let* ((release-mode-string "cmake -S . -B build/ -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release && cmake --build build/ && ln -fs build/compile_commands.json")
+         (debug-mode-string "cmake -S . -B build/ -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug && cmake --build build/ && ln -fs build/compile_commands.json"))
+    (if (equal mode "Debug")
+        (message "%s" (concat "Debug mode:\n" (shell-command-to-string debug-mode-string)))
+        (message "%s" (concat "Release mode:\n" (shell-command-to-string release-mode-string)))
+    )))
+
+(defun build-cmake-project-debug()
+  "Builds a CMake project in Debug mode."
+  (interactive)
+  (build-cmake-project "Debug"))
+
+(defun build-cmake-project-release()
+  "Builds a CMake project in Release mode."
+  (interactive)
+  (build-cmake-project "Release")
+  )
+
+(defun run-cmake-project (mode args)
+  "Run the CMake project."
+  (let* ((status-code-string "; echo \"Process exited with status code: $?\"")
+         (release-mode-string (concat "time ./build/Release/" (+workspace-current-name) " " args status-code-string))
+         (debug-mode-string (concat "time ./build/Debug/" (+workspace-current-name) " " args status-code-string)))
+    (if (equal mode "Debug")
+        (message "%s" (concat "Debug mode:\n" (shell-command-to-string debug-mode-string)))
+      (message "%s" (concat "Release mode:\n" (shell-command-to-string release-mode-string))))
+  ))
+
+(defun run-cmake-project-debug ()
+  "Run project in Debug mode."
+  (interactive)
+  (let* ((args (read-string "Give arguments, if any: ")))
+    (run-cmake-project "Debug" args))
+  )
+
+(defun run-cmake-project-release ()
+  "Run project in Release mode."
+  (interactive)
+  (let* ((args (read-string "Give arguments, if any: ")))
+    (run-cmake-project "Release" args))
+  )
+
+(map! :leader :desc "Create a CMake project" "m p" #'create-cmake-project)
+(map! :leader :desc "Build CMake project in Release mode." "m r" #'build-cmake-project-release)
+(map! :leader :desc "Build CMake project in Debug mode." "m d" #'build-cmake-project-debug)
+(map! :leader :desc "Run CMake project in Debug mode." "m D" #'run-cmake-project-debug)
+(map! :leader :desc "Run CMake project in Release mode." "m R" #'run-cmake-project-release)
+
+(use-package mu4e
+  ;; :load-path "/usr/share/emacs/site-lisp/mu4e/"
+  ;; :defer 20 ; Wait until 20 seconds after startup
+  :config
+
+  ;; This is set to 't' to avoid mail syncing issues when using mbsync
+  (setq mu4e-change-filenames-when-moving t)
+
+  ;; Refresh mail using isync every 10 minutes
+  (setq mu4e-update-interval (* 10 60))
+  (setq mu4e-get-mail-command "mbsync -a")
+  (setq mu4e-root-maildir "~/Mail")
+
+  (setq mu4e-drafts-folder "/[Gmail]/Drafts")
+  (setq mu4e-sent-folder   "/[Gmail]/Sent Mail")
+  (setq mu4e-refile-folder "/[Gmail]/All Mail")
+  (setq mu4e-trash-folder  "/[Gmail]/Trash")
+  (setq mu4e-maildir-shortcuts
+        '((:maildir "/Inbox"    :key ?i)
+        (:maildir "/[Gmail]/Sent Mail" :key ?s)
+        (:maildir "/[Gmail]/Trash"     :key ?t)
+        (:maildir "/[Gmail]/Drafts"    :key ?d)
+        (:maildir "/[Gmail]/All Mail"  :key ?a)))
+  (setq smtpmail-smtp-server "smtp.gmail.com"
+      smtpmail-smtp-service 465
+      smtpmail-stream-type 'ssl)
+  (setq message-send-mail-function 'smtpmail-send-it)
+  (setq mu4e-compose-signature "Almos Zediu")
+)
+
+(use-package org-mime
+  :ensure t)
+(map! :leader "o m" 'mu4e)
+
+;; (add-hook 'dired-mode-hook #'dired-hide-details-mode)
+;; (add-hook 'dired-mode-hook #'all-the-icons-dired-mode)
+(use-package dired-single)
+
+(use-package dired-hide-details
+  :hook (dired-mode . dired-hide-details-mode))
+
+(use-package all-the-icons-dired
+  :hook (dired-mode . all-the-icons-dired-mode))
+
+(use-package dired-hide-dotfiles
+  :hook (dired-mode . dired-hide-dotfiles-mode))
+
+(map! :map dired-mode-map
+    "[" 'dired-hide-dotfiles-mode)

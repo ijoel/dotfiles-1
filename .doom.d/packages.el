@@ -45,7 +45,8 @@
 (package! org-superstar)
 (package! yaml-mode)
 (package! python-black)
-(package! realgud)
+(package! dap-mode)
+(package! org-tree-slide)
 (package! org-fancy-priorities)
 (package! ox-hugo)
 (package! aio)
@@ -57,13 +58,16 @@
 (package! multi-vterm)
 (package! polymode)
 (package! all-the-icons-dired)
-(package! dired-single)
-(package! dired-hide-dotfiles)
 (package! treemacs-all-the-icons)
-
+(package! org-super-agenda)
+(package! dired-dd)
 (package! org-pandoc-import
   :recipe (:host github
            :repo "tecosaur/org-pandoc-import"
+           :files ("*.el" "filters" "preprocessors")))
+(package! centered-window-mode
+  :recipe (:host github
+           :repo "anler/centered-window-mode"
            :files ("*.el" "filters" "preprocessors")))
 ;; Doom's packages are pinned to a specific commit and updated from release to
 ;; release. The `unpin!' macro allows you to unpin single packages...

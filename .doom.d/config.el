@@ -2,12 +2,16 @@
 
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+(add-to-list 'org-structure-template-alist '("cpp" . "src C++"))
 
 (setq user-full-name  "Almos-Agoston Zediu"
       user-mail-address "zold.almos@gmail.com")
 
 (map! "C-i" 'evil-jump-forward)
 (setq-default tab-width 4)
+
+(map! :map makefile-mode-map
+      "." 'better-jumper-jump-forward)
 
 (setq package-native-compile t)
 
@@ -43,6 +47,11 @@
 (add-hook 'org-mode-hook #'alm/scale-text)
 (add-hook 'dired-mode-hook #'alm/scale-text)
 
+(setq evil-split-window-below t
+      evil-vsplit-window-right t)
+
+(setq +workspaces-on-switch-project-behavior nil)
+
 (load-theme 'doom-challenger-deep t)
 (set-frame-parameter (selected-frame) 'alpha '(89 . 89))
 (add-to-list 'default-frame-alist '(alpha . (89 . 89)))
@@ -57,8 +66,8 @@
   "It loads my light configuration."
         (interactive)
         (load-theme 'doom-gruvbox-light t)
-        (set-frame-parameter (selected-frame) 'alpha '(89 . 75))
-        (add-to-list 'default-frame-alist '(alpha . (89 . 75))))
+        (set-frame-parameter (selected-frame) 'alpha '(89 . 89))
+        (add-to-list 'default-frame-alist '(alpha . (89 . 89))))
 
 (map! :leader "t m d" 'load-dark-mode)
 (map! :leader "t m l" 'load-light-mode)
@@ -223,9 +232,11 @@
 
 (map! :leader :desc "Create a CMake project" "m p" #'create-cmake-project)
 (map! :leader :desc "Build CMake project in Release mode." "m r" #'build-cmake-project-release)
-(map! :leader :desc "Build CMake project in Debug mode." "m d" #'build-cmake-project-debug)
-(map! :leader :desc "Run CMake project in Debug mode." "m D" #'run-cmake-project-debug)
+(map! :leader :desc "Build CMake project in Debug mode." "m z" #'build-cmake-project-debug)
+(map! :leader :desc "Run CMake project in Debug mode." "m Z" #'run-cmake-project-debug)
 (map! :leader :desc "Run CMake project in Release mode." "m R" #'run-cmake-project-release)
+
+(require 'dap-lldb)
 
 (use-package mu4e
   ;; :load-path "/usr/share/emacs/site-lisp/mu4e/"
@@ -263,7 +274,6 @@
 
 ;; (add-hook 'dired-mode-hook #'dired-hide-details-mode)
 ;; (add-hook 'dired-mode-hook #'all-the-icons-dired-mode)
-(use-package dired-single)
 
 (use-package dired-hide-details
   :hook (dired-mode . dired-hide-details-mode))
@@ -271,8 +281,61 @@
 (use-package all-the-icons-dired
   :hook (dired-mode . all-the-icons-dired-mode))
 
-(use-package dired-hide-dotfiles
-  :hook (dired-mode . dired-hide-dotfiles-mode))
+;; (add-to-list 'dired-compress-files-alist '("\\.gz\\'" . "tar $o -r --filesync $i"))
 
-(map! :map dired-mode-map
-    "[" 'dired-hide-dotfiles-mode)
+(use-package! org-super-agenda
+  :config
+  (org-super-agenda-mode 1)
+  (setq org-super-agenda-groups
+        '(
+          (:name "Today"
+           :date today
+           :time-grid t
+           :todo "TODAY")
+          (:name "Important"
+           :tag "számla"
+           :priority "A")
+          (:not)))
+  )
+  :after
+  (setq org-super-agenda-header-map nil)
+
+(setq org-agenda-files '("~/Org/agenda.org"
+                         "~/Org/orarend.org"
+                         "~/Org/projektek"))
+(setq org-todo-keywords-for-agenda
+      (quote ((sequence "TODO(t)" "NEXT(p)" "WAIT(w)" "CANCELLED" "DONE(r)")
+              (sequence "[ ](T)" "[-](S)" "[?](W)" "|" "[X](D)"))))
+
+(setq org-todo-keywords
+      (quote ((sequence "TODO(t)" "NEXT(p)" "WAIT(w)" "CANCELLED" "DONE(r)")
+              (sequence "[ ](T)" "[-](S)" "[?](W)" "|" "[X](D)"))))
+
+(setq org-capture-templates
+      (quote
+            (("t" "Personal todo" entry
+            (file+headline "~/Org/agenda.org" "Random napi feladatok")
+            "* TODO %?\nSCHEDULED: <%(org-read-date)>")
+            ("p" "Templates for projects")
+            ("pt" "Project-local todo" entry
+            (file+headline +org-capture-project-todo-file "Inbox")
+            "* TODO %?\n%i\n%a" :prepend t)
+            ("pn" "Project-local notes" entry
+            (file+headline +org-capture-project-notes-file "Inbox")
+            "* %U %?\n%i\n%a" :prepend t)
+            ("pc" "Project-local changelog" entry
+            (file+headline +org-capture-project-changelog-file "Unreleased")
+            "* %U %?\n%i\n%a" :prepend t)
+            ("o" "Centralized templates for projects")
+            ("ot" "Project todo" entry #'+org-capture-central-project-todo-file "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
+            ("on" "Project notes" entry #'+org-capture-central-project-notes-file "* %U %?\n %i\n %a" :heading "Notes" :prepend t)
+            ("oc" "Project changelog" entry #'+org-capture-central-project-changelog-file "* %U %?\n %i\n %a" :heading "Changelog" :prepend t))
+       ))
+
+(set-irc-server! "webchat.freenode.net"
+  `(:tls t
+    :port 6697
+    :nick "hrothgar32"
+    :sasl-username "hrothgar32"
+    :sasl-password "agh54sdE561Q"
+    :channels ("#openmw")))

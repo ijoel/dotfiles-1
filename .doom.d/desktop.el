@@ -1,6 +1,10 @@
 (defun alm/exwm-update-class ()
   (exwm-workspace-rename-buffer exwm-class-name))
 
+(defun alm/connect-to-nextcloud()
+  (start-process-shell-command
+   "bash" nil "mount ~/nextcloud 1>/dev/null"))
+
 (defun alm/kill-and-close ()
   (interactive)
   "Kill a buffer, and if possible, close it's window."
@@ -9,7 +13,7 @@
 
 (defun alm/exwm-update-title ()
   (pcase exwm-class-name
-    ("firefox" (exwm-workspace-rename-buffer (format "Firefox: %s" exwm-title)))))
+    ("Brave-browser" (exwm-workspace-rename-buffer (format "Brave: %s" exwm-title)))))
 
   ;; When window title updates, use it to set the buffer name
   (add-hook 'exwm-update-title-hook #'alm/exwm-update-title)
@@ -24,6 +28,21 @@
   (start-process-shell-command)
   "i3lock-fancy" nil "i3lock-fancy")
 
+(defun alm/spotify-toggle()
+  (interactive)
+  (start-process-shell-command
+   "playerctl" nil "playerctl --player=spotify play-pause"))
+
+(defun alm/spotify-previous()
+  (interactive)
+  (start-process-shell-command
+   "playerctl" nil "playerctl --player=spotify previous"))
+
+(defun alm/spotify-next()
+  (interactive)
+  (start-process-shell-command
+   "playerctl" nil "playerctl --player=spotify next"))
+
 (defun alm/exwm-init-hook ()
   (alm/start-panel))
 
@@ -32,7 +51,7 @@
 
 (use-package exwm
   :config
-  (setq exwm-workspace-number 9)
+  (setq exwm-workspace-number 5)
 
 
   ;; Key resolution
@@ -77,6 +96,9 @@
         ([?\s-l] . windmove-right)
         ([?\s-k] . windmove-up)
         ([?\s-j] . windmove-down)
+        ([?\s-S] . alm/spotify-toggle)
+        ([?\s-A] . alm/spotify-previous)
+        ([?\s-D] . alm/spotify-next)
         ([?\s-Q] . alm/kill-and-close)
         ([?\s-X] . alm/lock-screen)
 
@@ -111,18 +133,18 @@
   (interactive)
   (setq alm/polybar-process (start-process-shell-command "poly" nil "polybar main")))
 
-(defun geci ()
-  (pcase exwm--selected-input-mode
-    ('line-mode' )
-    ('char-mode' )
-    ))
+;; (defun geci ()
+;;   (pcase exwm--selected-input-mode
+;;     ('line-mode' )
+;;     ('char-mode' )
+;;     ))
 
-(defun alm/send-polybar-mode-hook ()
-  (setq szam (geci))
-  (start-process-shell-command "polybar-msg" nil
-                               "polybar-msg hook exwm-mode 1"))
+;; (defun alm/send-polybar-mode-hook ()
+;;   (setq szam (geci))
+;;   (start-process-shell-command "polybar-msg" nil
+;;                                "polybar-msg hook exwm-mode 1"))
 
-(add-hook 'exwm-input-input-mode-change-hook #'alm/send-polybar-mode-hook)
+;; (add-hook 'exwm-input-input-mode-change-hook #'alm/send-polybar-mode-hook)
 
 (use-package desktop-environment
   :after exwm
